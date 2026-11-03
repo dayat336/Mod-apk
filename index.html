@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toko Produk Saya</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    color: #fff;
+    background: #0f172a;
+  }
+
+  /* ===== BACKGROUND (diatur dari kode) ===== */
+  #bgLayer {
+    position: fixed; inset: 0; z-index: -2;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  #bgVideo {
+    position: fixed; inset: 0; z-index: -2;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  #bgShade {
+    position: fixed; inset: 0; z-index: -1;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #musicBtn {
+    position: fixed; right: 14px; bottom: 14px; z-index: 50;
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.55);
+    background: rgba(0,0,0,.45); color: #fff; font-size: 1.2rem;
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  header { text-align: center; padding: 40px 16px 16px; }
+  header h1 { font-size: 1.8rem; text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+  header p { opacity: .9; margin-top: 6px; text-shadow: 0 1px 6px rgba(0,0,0,.5); }
+
+  /* ===== KOTAK PRODUK (transparan) ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    padding: 20px 16px 50px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .card {
+    background: rgba(255,255,255,.12);
+    border: 1.5px solid rgba(255,255,255,.45);
+    border-radius: 14px;
+    padding: 18px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.2);
+  }
+  .card h3 { font-size: 1.1rem; }
+  .card .label { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
+  .card p { font-size: .92rem; line-height: 1.45; opacity: .95; flex: 1; }
+  .card .harga { font-weight: 700; font-size: 1.05rem; }
+  .btn {
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
+    background: #25d366;
+    color: #fff;
+    border: 0;
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: .95rem;
+    cursor: pointer;
+  }
+  .btn:active { transform: scale(.97); }
+
+  /* ===== POPUP CHANNEL WHATSAPP ===== */
+  #waOverlay, #dlOverlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: radial-gradient(circle at 50% 40%, rgba(30,24,10,.75), rgba(0,0,0,.92));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+    animation: fadeIn .5s ease;
+  }
+  #waOverlay.show, #dlOverlay.show { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* bingkai emas bergradasi */
+  .waBox {
+    position: relative; width: 100%; max-width: 370px;
+    padding: 2px; border-radius: 26px;
+    background: linear-gradient(135deg, #f9e29a, #b8892b 30%, #fff3c4 50%, #b8892b 70%, #f1d27a);
+    box-shadow: 0 0 60px rgba(212,175,55,.35), 0 25px 60px rgba(0,0,0,.7);
+    animation: rise .7s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes rise { from { transform: translateY(40px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .waInner {
+    position: relative; overflow: hidden;
+    border-radius: 24px;
+    padding: 38px 26px 28px; text-align: center;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(212,175,55,.22), transparent 60%),
+      linear-gradient(180deg, #17130b, #0b0905);
+    color: #f5e9c8;
+  }
+  /* kilau bergerak */
+  .waInner::before {
+    content: ""; position: absolute; top: 0; left: -120%;
+    width: 60%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,240,180,.12), transparent);
+    transform: skewX(-20deg);
+    animation: sweep 4.5s ease-in-out infinite;
+  }
+  @keyframes sweep { 0% { left: -120%; } 55%, 100% { left: 160%; } }
+
+  .waBadge {
+    display: inline-block;
+    font-size: .68rem; letter-spacing: .28em; text-transform: uppercase;
+    color: #d4af37; border: 1px solid rgba(212,175,55,.5);
+    padding: 5px 14px; border-radius: 999px; margin-bottom: 20px;
+  }
+  .waIcon {
+    position: relative;
+    width: 84px; height: 84px; margin: 0 auto 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(145deg, #2fe77a, #128c4a);
+    box-shadow: 0 0 0 4px #0b0905, 0 0 0 6px #d4af37, 0 0 30px rgba(37,211,102,.5);
+    animation: glow 2.6s ease-in-out infinite;
+  }
+  .waIcon svg { width: 46px; height: 46px; fill: #fff; }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 0 4px #0b0905, 0 0 0 6px #d4af37, 0 0 24px rgba(37,211,102,.4); }
+    50%      { box-shadow: 0 0 0 4px #0b0905, 0 0 0 6px #f6dd8a, 0 0 44px rgba(37,211,102,.7); }
+  }
+  .waInner h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.6rem; font-weight: 600; letter-spacing: .02em;
+    background: linear-gradient(180deg, #fff3c4, #d4af37);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .waLine {
+    width: 70px; height: 1px; margin: 14px auto;
+    background: linear-gradient(90deg, transparent, #d4af37, transparent);
+  }
+  .waInner p {
+    font-size: .93rem; line-height: 1.6; color: #cdbf9a; margin-bottom: 24px;
+  }
+  .waInner .waJoin {
+    display: block; width: 100%;
+    padding: 15px; border-radius: 14px;
+    text-decoration: none; text-align: center;
+    font-weight: 700; font-size: 1rem; letter-spacing: .04em;
+    color: #1a1204;
+    background: linear-gradient(135deg, #f9e29a, #d4af37 50%, #b8892b);
+    box-shadow: 0 8px 22px rgba(212,175,55,.35), inset 0 1px 0 rgba(255,255,255,.6);
+    transition: transform .15s;
+  }
+  .waInner .waJoin:active { transform: scale(.97); }
+  .waNote { margin-top: 14px; font-size: .72rem; color: #8a7d5a; letter-spacing: .06em; }
+
+  .waIcon.gold {
+    background: linear-gradient(145deg, #f9e29a, #b8892b);
+    box-shadow: 0 0 0 4px #0b0905, 0 0 0 6px #d4af37, 0 0 30px rgba(212,175,55,.5);
+  }
+  .waIcon.gold svg { fill: #1a1204; }
+  .dlName {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.5rem; font-weight: 600; line-height: 1.25;
+    background: linear-gradient(180deg, #fff3c4, #d4af37);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    word-break: break-word;
+  }
+  .dlPrice { margin-top: 10px; font-weight: 700; color: #f1d27a; font-size: 1.05rem; letter-spacing: .04em; }
+  .waGhost {
+    display: block; width: 100%; margin-top: 10px; padding: 12px;
+    border-radius: 14px; background: transparent; cursor: pointer;
+    border: 1px solid rgba(212,175,55,.45); color: #cdbf9a;
+    font-size: .9rem; letter-spacing: .04em;
+  }
+  #waClose, #dlClose {
+    position: absolute; top: 12px; right: 12px; z-index: 2;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid rgba(212,175,55,.55);
+    background: rgba(0,0,0,.45); color: #f1d27a;
+    font-size: 1.05rem; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s, color .2s;
+  }
+  #waClose:hover, #dlClose:hover { background: #d4af37; color: #1a1204; }
+</style>
+</head>
+<body>
+
+<div id="bgLayer"></div>
+<video id="bgVideo" autoplay muted loop playsinline></video>
+<div id="bgShade"></div>
+<button id="musicBtn" aria-label="Lagu">🔊</button>
+
+<header>
+  <h1 id="namaToko">tempat mod yatzz</h1>
+  <p id="slogan">Pilih mod yang kamu ingin pakai</p>
+</header>
+
+<main class="grid" id="grid"></main>
+
+<!-- Popup Download Produk -->
+<div id="dlOverlay">
+  <div class="waBox">
+    <div class="waInner">
+      <button id="dlClose" aria-label="Tutup">✕</button>
+      <div class="waBadge">Produk Pilihan</div>
+      <div class="waIcon gold">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a1 1 0 011 1v8.59l2.3-2.3a1 1 0 111.4 1.42l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 111.4-1.42l2.3 2.3V4a1 1 0 011-1zM5 18a1 1 0 011 1v1h12v-1a1 1 0 112 0v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2a1 1 0 011-1z"/></svg>
+      </div>
+      <div class="dlName" id="dlName">Nama Produk</div>
+      <div class="waLine"></div>
+      <p id="dlDesc">Kegunaan produk</p>
+      <div class="dlPrice" id="dlPrice"></div>
+      <a class="waJoin" id="dlGet" href="#" style="margin-top:20px">UNDUH SEKARANG</a>
+      <button class="waGhost" id="dlCancel">Nanti saja</button>
+      <div class="waNote">Aman • Langsung terunduh</div>
+    </div>
+  </div>
+</div>
+
+<!-- Popup Channel WhatsApp -->
+<div id="waOverlay">
+  <div class="waBox">
+    <div class="waInner">
+      <button id="waClose" aria-label="Tutup">✕</button>
+      <div class="waBadge">Eksklusif</div>
+      <div class="waIcon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 004.74 1.21c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.1c-.25.69-1.45 1.32-2 1.37-.51.05-1.15.07-1.85-.12-.43-.13-.97-.31-1.67-.61-2.94-1.27-4.86-4.23-5.01-4.43-.15-.2-1.2-1.6-1.2-3.05 0-1.45.76-2.16 1.03-2.46.27-.3.59-.37.79-.37h.57c.18 0 .43-.07.67.51.25.6.85 2.06.92 2.21.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.39-.45.52-.15.15-.3.31-.13.61.17.3.77 1.27 1.65 2.05 1.13 1.01 2.09 1.32 2.39 1.47.3.15.47.12.65-.07.17-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.27.1 1.72.81 2.02.96.3.15.5.22.57.35.07.12.07.72-.18 1.41z"/></svg>
+      </div>
+      <h2>Channel WhatsApp</h2>
+      <div class="waLine"></div>
+      <p>bergabunglah dengan komunitas kami untuk mendapatka update mod selanjut nya ok</p>
+      <a class="waJoin" id="waJoin" href="https://whatsapp.com/channel/0029VbDgwuS42DcgogZs4o33" target="_blank" rel="noopener">GABUNG SEKARANG</a>
+      <div class="waNote">masuk gak akan spam orang nya aja cuma 3</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================
+   PENGATURAN — EDIT DI SINI SAJA
+   ===================================================== */
+const TOKO = {
+  nama: "mod mod yng di pake yatzz",
+  slogan: "pilih mod yang kamu butuhkan"
+};
+
+/* =====================================================
+   BACKGROUND — GANTI DI SINI
+   Hapus tanda // di depan SATU pilihan saja, pilihan lain
+   biarkan diberi //
+
+   tipe "warna"  -> isi: warna atau gradient CSS
+   tipe "gambar" -> isi: nama file / link gambar
+   tipe "video"  -> isi: nama file / link video (.mp4 / .webm)
+
+   gelap: 0 sampai 1, untuk menggelapkan background supaya
+          tulisan lebih jelas (0 = tidak gelap, 0.5 = agak gelap)
+   ===================================================== */
+const BACKGROUND = {
+  // --- PILIHAN 1: warna / gradient (aktif) ---
+  tipe: "warna",
+  isi: "linear-gradient(135deg,#1e3a8a,#7c3aed)",
+
+  // --- PILIHAN 2: gambar ---
+  // tipe: "gambar",
+  // isi: "gambar/bg.jpg",
+
+  // --- PILIHAN 3: video ---
+  tipe: "video",
+  isi: "gojo loading screen.mp4",
+
+  gelap: 0.25
+};
+
+/* =====================================================
+   LAGU — PASANG DI SINI
+   - file     : nama file lagu (.mp3) atau link. Contoh: "lagu/lagu1.mp3"
+                Kosongkan ("") kalau tidak mau pakai lagu.
+   - volume   : 0 sampai 1 (0.5 = setengah)
+   - ulang    : true = diulang terus, false = sekali saja
+   - tombol   : true = ada tombol kecil 🔊 untuk mematikan lagu
+   ===================================================== */
+const LAGU = {
+  file: "Bruno mars.mp3",
+  volume: 0.6,
+  ulang: true,
+  tombol: false,
+};
+
+/* =====================================================
+   DAFTAR PRODUK
+   Tambah produk = tambah satu blok { ... } di bawah.
+   - nama   : nama produk (tampil di kotak)
+   - guna   : kegunaan produk (tampil di kotak)
+   - harga  : isi teks harga, atau "" kalau tidak mau tampil
+   - file   : FILE PRODUK dipasang di sini (hanya di kode,
+              tidak ditampilkan di halaman). Bisa nama file
+              di folder yang sama ("produk/ebook.pdf") atau
+              link (Google Drive, dll).
+   - tombol : tulisan di tombol
+   ===================================================== */
+const PRODUK = [
+  { nama: "astraplay", guna: "yang mau nonton anime bebas no iklan sung ke sini aja yaa",file: "https://www.mediafire.com/file/zdg0isyo5uurkse/AstraPlay_1.0_Protected.apk/file", tombol: "Dapatkan" },
+  { nama: "capcut premium mod", guna: "yang mau ngedit dan pake template tapi mau gratis download ini aja",file: "https://www.mediafire.com/file/j80adea0tan6mjx/CapCut_v19.10.0_ULT%25E2%2593%25A1A_2027.apk/file", tombol: "Dapatkan" },
+  { nama: "ninja strom mod", guna: "yang mau main ninja kayak ps 3 langsung aja pake ini",file: "https://www.berrymodapk.com/NARUTOUltimateNinjaSTORM/", tombol: "Dapatkan" },
+  { nama: "chat gpt", guna: "yang kalo nanya chatGPT kena limit pake ini aja udah prem.",file: "https://www.berrymodapk.com/ChatGPT/", tombol: "Dapatkan" },
+  { nama: "stardustTV", guna: "yang mau nonton drama china tanpa iklan di sini jawaban nya",file: "https://www.berrymodapk.com/StardustTV/", tombol: "Dapatkan" },
+  { nama: "wink china mod", guna: "yang mau hd kan foto pake wink inj aja di jamin gratis",file: "https://www.berrymodapk.com/DesignKit/", tombol: "Dapatkan" },
+  { nama: "the spike",guna: "yang mau main game voli yang viral di tiktok dengan karakter full di sini aja",file: "https://www.mediafire.com/file/s9sxw2djtyeu9sz/The_Spike_Mod_by_Mr.VtaSpike_Modz_5.0.0.apk/file" },
+  { nama: "netflix premium",guna: "yang mau nonton bioskop tapi gak ada duit di netflix ini gratis lojh",file: "https://sfl.gl/EnpelikBerryV4"},
+  { nama: "bussid mod",guna: "yang mau main bussid mod tanpa teleport money unlimited dll langsung chat gua ya pnecet aja DAPATKAN",file: "https://wa.me/qr/3JYV7RXDYZT4L1" },
+  { nama: "gta mod tauran",guna: "yang gabut pen nyoba nyoba tauran jangan dah bahaya mending di gta aja sensasi nya sama kok",file: "https://sub4unlock.com/S/z3yih"}
+];
+
+/* ===================== KODE (tidak perlu diubah) ===================== */
+const $ = id => document.getElementById(id);
+
+// Judul
+$("namaToko").textContent = TOKO.nama;
+$("slogan").textContent = TOKO.slogan;
+document.title = TOKO.nama;
+
+// Background
+(function () {
+  const layer = $("bgLayer"), video = $("bgVideo");
+  $("bgShade").style.opacity = BACKGROUND.gelap || 0;
+
+  if (BACKGROUND.tipe === "video") {
+    layer.style.background = "#000";
+    video.src = BACKGROUND.isi;
+    video.style.display = "block";
+    video.muted = true;
+    const p = video.play();
+    if (p && p.catch) p.catch(() => {});
+  } else if (BACKGROUND.tipe === "gambar") {
+    layer.style.backgroundImage = "url('" + BACKGROUND.isi + "')";
+  } else {
+    layer.style.background = BACKGROUND.isi;
+  }
+})();
+
+// Kotak produk
+const grid = $("grid");
+PRODUK.forEach(p => {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const label = document.createElement("div");
+  label.className = "label";
+  label.textContent = "Produk";
+
+  const h = document.createElement("h3");
+  h.textContent = p.nama;
+
+  const d = document.createElement("p");
+  d.textContent = p.guna;
+
+  card.append(label, h, d);
+
+  if (p.harga) {
+    const hg = document.createElement("div");
+    hg.className = "harga";
+    hg.textContent = p.harga;
+    card.append(hg);
+  }
+
+  const a = document.createElement("a");
+  a.className = "btn";
+  a.textContent = p.tombol || "Dapatkan";
+  a.href = p.file;
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.onclick = ev => { ev.preventDefault(); bukaUnduh(p); };
+  card.append(a);
+
+  grid.append(card);
+});
+
+// Popup unduh produk
+const dl = $("dlOverlay");
+function bukaUnduh(p) {
+  $("dlName").textContent = p.nama;
+  $("dlDesc").textContent = p.guna;
+  $("dlPrice").textContent = p.harga || "";
+  const g = $("dlGet");
+  g.href = p.file;
+  g.rel = "noopener";
+  if (/^https?:\/\//i.test(p.file)) {
+    g.target = "_blank";
+    g.removeAttribute("download");
+  } else {
+    g.removeAttribute("target");
+    g.setAttribute("download", "");
+  }
+  dl.classList.add("show");
+}
+function tutupUnduh() { dl.classList.remove("show"); }
+$("dlClose").onclick = tutupUnduh;
+$("dlCancel").onclick = tutupUnduh;
+$("dlGet").addEventListener("click", () => setTimeout(tutupUnduh, 600));
+
+// Lagu otomatis
+(function () {
+  if (!LAGU.file) return;
+  const audio = new Audio(LAGU.file);
+  audio.loop = !!LAGU.ulang;
+  audio.volume = LAGU.volume;
+  audio.preload = "auto";
+  let jalan = false;
+
+  const btn = $("musicBtn");
+  function ikon() { btn.textContent = audio.paused ? "🔇" : "🔊"; }
+
+  function mulai() {
+    const p = audio.play();
+    if (p && p.then) {
+      p.then(() => { jalan = true; ikon(); lepasPemicu(); }).catch(() => {});
+    }
+  }
+  // Browser memblokir suara otomatis, jadi lagu mulai saat sentuhan pertama
+  const pemicu = ["click", "touchstart", "keydown", "scroll"];
+  function lepasPemicu() { pemicu.forEach(e => document.removeEventListener(e, mulai)); }
+  pemicu.forEach(e => document.addEventListener(e, mulai, { passive: true }));
+
+  mulai(); // coba langsung saat web dibuka
+
+  if (LAGU.tombol) {
+    btn.style.display = "flex";
+    btn.onclick = ev => {
+      ev.stopPropagation();
+      if (audio.paused) { audio.play().catch(() => {}); } else { audio.pause(); }
+      ikon();
+    };
+    audio.addEventListener("play", ikon);
+    audio.addEventListener("pause", ikon);
+    ikon();
+  }
+})();
+
+// Popup Channel WhatsApp (muncul setiap web dibuka)
+const ov = $("waOverlay");
+ov.classList.add("show");
+$("waClose").onclick = () => ov.classList.remove("show");
+$("waJoin").onclick = () => setTimeout(() => ov.classList.remove("show"), 300);
+</script>
+</body>
+</html>
